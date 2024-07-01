@@ -44,61 +44,42 @@ recursos = {
 }
 
 # --- SIDEBAR ---
-st.sidebar.title("Resumen del Proyecto")
-st.sidebar.markdown("**Descripción:**")
-st.sidebar.write(
-    "Este proyecto minero consiste en la habilitación de un nuevo punto de extracción "
-    "de mineral. Se requiere la construcción de caminos de acceso, instalación de "
-    "faena, saneamiento de un pique existente, construcción de un nuevo túnel "
-    "de producción y la posterior explotación del yacimiento."
-)
-st.sidebar.markdown("**Subcontratos:**")
-st.sidebar.markdown("- Empresa de obras menores (Instalación de faena)")
-st.sidebar.markdown("- Empresa proveedora de explosivos")
+# ... (Código del sidebar igual que antes)
 
 # --- MAIN PAGE --- 
-
-st.header("1. Etapas del Proyecto")
-st.write("**Etapa 1: Preparación (7 días)**")
-st.write("- Día 1-3: Construcción de caminos de acceso.")
-st.write("- Día 4-7: Instalación de faena (Subcontrato a empresa de Obras Menores).")
-st.write("**Etapa 2: Exploración y Preparación (38 días)**")
-st.write("- Día 8 - 45: Saneamiento de pique (38 días, considerando los domingos).")
-st.write("- Día 15 - 84: Construcción del túnel principal de producción (70 días, en paralelo al saneamiento del pique).")
-st.write("- Día 46 - 51: Habilitación nivel de exploración (6 días hábiles, considerando sábado).")
-st.write("**Etapa 3: Producción (En curso)**")
-st.write("- Día 52 - Fin del proyecto: Inicio de la producción.")
+# ... (Código de Etapas del Proyecto igual que antes)
 
 # --- DIAGRAMA DE GANTT ---
 st.header("4. Diagrama de Gantt")
+
 fig = px.timeline(df_gantt, x_start="Inicio", x_end="Fin", y="Tarea", color="Recursos",
                   title="Cronograma del Proyecto")
 
-# Ajustar el rango del eje X para que empiece en octubre
+# Ajustes para una mejor visualización en móvil y escritorio
 fig.update_xaxes(
     type='date',
-    tickformat="%d/%m/%Y", 
-    dtick="M1",              
-    range=["2024-10-01", "2025-05-31"]  # Rango ajustado para mostrar desde octubre
+    tickformat="%d/%b",      # Formato día/mes abreviado
+    dtick="D7",              # Mostrar una marca cada 7 días (una semana)
+    range=["2024-09-25", "2025-04-07"], # Rango ajustado para mejor visualización
+    showgrid=True,          # Mostrar líneas de grid
+    gridcolor="lightgrey", 
+    gridwidth=1,
+)
+fig.update_yaxes(autorange="reversed")
+
+# Ajustar el tamaño de la figura para mejor visualización
+fig.update_layout(
+    height=500,  # Ajusta la altura según sea necesario
+    margin=dict(l=20, r=20, t=40, b=20),
 )
 
-fig.update_yaxes(autorange="reversed")
 st.plotly_chart(fig, use_container_width=True)
 
 # --- RECURSOS DEL PROYECTO ---
-st.header("2. Recursos")
-for categoria, items in recursos.items():
-    st.subheader(categoria)
-    for item in items:
-        st.markdown(f"- {item}")
+# ... (Código de Recursos del Proyecto igual que antes)
 
 # --- PRESUPUESTO Y COSTOS ---
-st.header("5. Presupuesto")
-st.warning("Se necesita información detallada sobre costos de mano de obra, materiales, combustibles, arriendos, seguros, etc. para elaborar un presupuesto preciso.")
-st.markdown("Puedes subir un archivo CSV con la información o utilizar la librería `pandas` para crear un DataFrame directamente en el código.")
+# ... (Código de Presupuesto y Costos igual que antes)
 
 # --- CONSIDERACIONES ADICIONALES ---
-st.header("6. Consideraciones Adicionales")
-st.markdown("- **Seguridad y salud ocupacional:** Implementar un plan de seguridad y salud ocupacional para prevenir accidentes y enfermedades profesionales.")
-st.markdown("- **Medio ambiente:** Cumplir con la normativa ambiental vigente y minimizar el impacto del proyecto sobre el entorno.")
-st.markdown("- **Relaciones comunitarias:** Mantener una comunicación fluida y transparente con las comunidades cercanas al proyecto.")
+# ... (Código de Consideraciones Adicionales igual que antes)
