@@ -5,7 +5,7 @@ import plotly.express as px
 st.set_page_config(page_title="Proyecto Minero", layout="wide")
 st.title("Planificación Proyecto Minero")
 
-# Datos del Proyecto
+# Datos del Gantt (Asegúrate de que estas fechas tengan sentido para tu proyecto)
 data_gantt = {
     "Tarea": [
         "Construcción de caminos de acceso",
@@ -16,10 +16,10 @@ data_gantt = {
         "Explotación y transporte de mineral"
     ],
     "Inicio": [
-        "Día 1", "Día 4", "Día 8", "Día 15", "Día 46", "Día 52"
+        "2024-01-08", "2024-01-11", "2024-01-15", "2024-01-22", "2024-03-11", "2024-03-18"
     ],
     "Fin": [
-        "Día 3", "Día 7", "Día 45", "Día 84", "Día 51", "Día 150" # Ejemplo de fin de proyecto
+        "2024-01-10", "2024-01-15", "2024-02-22", "2024-03-29", "2024-03-20", "2024-07-29"  
     ],
     "Duración (días)": [3, 4, 38, 70, 6, "-"],
     "Recursos": [
@@ -32,10 +32,8 @@ data_gantt = {
     ]
 }
 df_gantt = pd.DataFrame(data_gantt)
-
-# Convertir las columnas "Inicio" y "Fin" a datetime
-df_gantt["Inicio"] = pd.to_datetime(df_gantt["Inicio"], format="Día %d")
-df_gantt["Fin"] = pd.to_datetime(df_gantt["Fin"], format="Día %d")
+df_gantt["Inicio"] = pd.to_datetime(df_gantt["Inicio"])
+df_gantt["Fin"] = pd.to_datetime(df_gantt["Fin"])
 
 # Recursos del Proyecto
 recursos = {
@@ -47,6 +45,7 @@ recursos = {
 
 # --- SIDEBAR ---
 st.sidebar.title("Resumen del Proyecto")
+
 st.sidebar.markdown("**Descripción:**")
 st.sidebar.write(
     "Este proyecto minero consiste en la habilitación de un nuevo punto de extracción "
@@ -60,18 +59,41 @@ st.sidebar.markdown("- Empresa de obras menores (Instalación de faena)")
 st.sidebar.markdown("- Empresa proveedora de explosivos")
 
 # --- MAIN PAGE ---
-st.header("Diagrama de Gantt")
+
+st.header("1. Etapas del Proyecto")
+st.write("**Etapa 1: Preparación (7 días)**")
+st.write("- Día 1-3: Construcción de caminos de acceso.")
+st.write("- Día 4-7: Instalación de faena (Subcontrato a empresa de Obras Menores).")
+
+st.write("**Etapa 2: Exploración y Preparación (38 días)**")
+st.write("- Día 8 - 45: Saneamiento de pique (38 días, considerando los domingos).")
+st.write("- Día 15 - 84: Construcción del túnel principal de producción (70 días, en paralelo al saneamiento del pique).")
+st.write("- Día 46 - 51: Habilitación nivel de exploración (6 días hábiles, considerando sábado).")
+
+st.write("**Etapa 3: Producción (En curso)**")
+st.write("- Día 52 - Fin del proyecto: Inicio de la producción.")
+
+# --- DIAGRAMA DE GANTT ---
+st.header("4. Diagrama de Gantt")
 fig = px.timeline(df_gantt, x_start="Inicio", x_end="Fin", y="Tarea", color="Recursos",
                   title="Cronograma del Proyecto")
 fig.update_yaxes(autorange="reversed")
 st.plotly_chart(fig, use_container_width=True)
 
-st.header("Recursos del Proyecto")
+# --- RECURSOS DEL PROYECTO ---
+st.header("2. Recursos")
 for categoria, items in recursos.items():
     st.subheader(categoria)
     for item in items:
         st.markdown(f"- {item}")
 
-st.header("Presupuesto y Costos")
-st.warning("Para visualizar el presupuesto y costos, por favor proporciona la información detallada de costos de mano de obra, materiales, combustibles, arriendos, seguros, etc.")
+# --- PRESUPUESTO Y COSTOS ---
+st.header("5. Presupuesto")
+st.warning("Se necesita información detallada sobre costos de mano de obra, materiales, combustibles, arriendos, seguros, etc. para elaborar un presupuesto preciso.")
 st.markdown("Puedes subir un archivo CSV con la información o utilizar la librería `pandas` para crear un DataFrame directamente en el código.")
+
+# --- CONSIDERACIONES ADICIONALES ---
+st.header("6. Consideraciones Adicionales")
+st.markdown("- **Seguridad y salud ocupacional:** Implementar un plan de seguridad y salud ocupacional para prevenir accidentes y enfermedades profesionales.")
+st.markdown("- **Medio ambiente:** Cumplir con la normativa ambiental vigente y minimizar el impacto del proyecto sobre el entorno.")
+st.markdown("- **Relaciones comunitarias:** Mantener una comunicación fluida y transparente con las comunidades cercanas al proyecto.")
