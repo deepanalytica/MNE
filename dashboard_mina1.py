@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Proyecto Minero", layout="wide")
 st.title("Planificación Proyecto Minero")
 
-# Datos del Gantt (Fechas actualizadas)
+# Datos del Gantt 
 data_gantt = {
     "Tarea": [
         "Construcción de caminos de acceso",
@@ -62,10 +63,12 @@ st.header("1. Etapas del Proyecto")
 st.write("**Etapa 1: Preparación (7 días)**")
 st.write("- Día 1-3: Construcción de caminos de acceso.")
 st.write("- Día 4-7: Instalación de faena (Subcontrato a empresa de Obras Menores).")
+
 st.write("**Etapa 2: Exploración y Preparación (38 días)**")
 st.write("- Día 8 - 45: Saneamiento de pique (38 días, considerando los domingos).")
 st.write("- Día 15 - 84: Construcción del túnel principal de producción (70 días, en paralelo al saneamiento del pique).")
 st.write("- Día 46 - 51: Habilitación nivel de exploración (6 días hábiles, considerando sábado).")
+
 st.write("**Etapa 3: Producción (En curso)**")
 st.write("- Día 52 - Fin del proyecto: Inicio de la producción.")
 
@@ -74,16 +77,37 @@ st.header("4. Diagrama de Gantt")
 fig = px.timeline(df_gantt, x_start="Inicio", x_end="Fin", y="Tarea", color="Recursos",
                   title="Cronograma del Proyecto")
 
-# Ajustar el rango del eje X para que empiece en octubre
 fig.update_xaxes(
     type='date',
-    tickformat="%d/%m/%Y", 
-    dtick="M1",              
-    range=["2024-10-01", "2025-05-31"]  # Rango ajustado para mostrar desde octubre
+    tickformat="%d/%m/%Y",
+    dtick="W1", 
+    range=["2024-09-25", "2025-04-10"]
 )
-
+fig.update_layout(xaxis_rangeslider_visible=True)
 fig.update_yaxes(autorange="reversed")
 st.plotly_chart(fig, use_container_width=True)
+
+# --- ORGANIGRAMA ---
+st.header("Organigrama del Proyecto")
+
+organigrama = {
+    "nombre": ["Gerente de la Compañía", "Jefe de Operaciones", "Supervisor de Minería", 
+               "Minero 1", "Minero 2", "Minero 3", "Minero 4", 
+               "Ayudante 1", "Ayudante 2", "Ayudante 3", "Ayudante 4", 
+               "Mecánico", "Guardia 1", "Guardia 2", "Bodeguero"],
+    "padre": ["", "Gerente de la Compañía", "Jefe de Operaciones", 
+              "Supervisor de Minería", "Supervisor de Minería", "Supervisor de Minería", "Supervisor de Minería",
+              "Supervisor de Minería", "Supervisor de Minería", "Supervisor de Minería", "Supervisor de Minería",
+              "Jefe de Operaciones", "Jefe de Operaciones", "Jefe de Operaciones", "Jefe de Operaciones"],
+}
+df_organigrama = pd.DataFrame(organigrama)
+
+fig_organigrama = go.Figure(go.Treemap(
+    labels = df_organigrama["nombre"],
+    parents = df_organigrama["padre"],
+))
+fig_organigrama.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+st.plotly_chart(fig_organigrama, use_container_width=True)
 
 # --- RECURSOS DEL PROYECTO ---
 st.header("2. Recursos")
