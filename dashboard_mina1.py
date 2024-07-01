@@ -1,13 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from PIL import Image  # Para cargar imágenes
+from anytree import Node, RenderTree
+from anytree.exporter import DotExporter
+from PIL import Image
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
-    page_title="Dashboard Proyecto Minero", 
+    page_title="Dashboard Proyecto Minero",
     layout="wide",
-    initial_sidebar_state="expanded"  # Mostrar sidebar expandido al inicio
+    initial_sidebar_state="expanded"
 )
 
 # --- ESTILOS CSS PARA MEJORAR UI ---
@@ -86,6 +88,21 @@ st.sidebar.markdown("**Subcontratos:**")
 st.sidebar.markdown("- Empresa de obras menores (Instalación de faena)")
 st.sidebar.markdown("- Empresa proveedora de explosivos")
 
+# --- FUNCIÓN PARA CREAR Y MOSTRAR EL ORGANIGRAMA ---
+def mostrar_organigrama():
+    """Crea y muestra el organigrama del proyecto."""
+    gerente = Node("Gerente General")
+    jefe_operaciones = Node("Jefe de Operaciones", parent=gerente)
+    supervisor_mineria = Node("Supervisor de Minería", parent=jefe_operaciones)
+    mineros = Node("Minero (x4)", parent=supervisor_mineria)
+    ayudantes = Node("Ayudante (x4)", parent=supervisor_mineria)
+    jefe_administracion = Node("Jefe de Administración", parent=gerente)
+    bodeguero = Node("Bodeguero", parent=jefe_administracion)
+
+    DotExporter(gerente).to_picture("organigrama.png")
+    imagen_organigrama = Image.open("organigrama.png")
+    st.image(imagen_organigrama, caption="Organigrama del Proyecto", use_column_width=True)
+
 # --- MAIN PAGE ---
 st.markdown('<p class="titulo">Planificación y Control del Proyecto Minero</p>', unsafe_allow_html=True)
 
@@ -112,15 +129,15 @@ fig.update_xaxes(
     type='date',
     tickformat="%d/%m/%Y", 
     dtick="M1",              
-    range=["2024-09-25", "2025-05-10"], # Rango ajustado para mostrar desde octubre
-    showgrid=True, gridwidth=1, gridcolor='lightgray' # Agregar grilla al eje X
+    range=["2024-09-25", "2025-05-10"],
+    showgrid=True, gridwidth=1, gridcolor='lightgray'
 )
 fig.update_yaxes(autorange="reversed")
 fig.update_layout(
     xaxis_title="Fecha",
     yaxis_title="Tarea",
     font=dict(family="Arial", size=14),
-    title_x=0.5  # Centrar el título del gráfico
+    title_x=0.5
 )
 st.plotly_chart(fig, use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
@@ -137,12 +154,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 # --- ORGANIGRAMA ---
 st.markdown('<p class="subtitulo">Organigrama del Proyecto</p>', unsafe_allow_html=True)
 st.markdown('<div class="recuadro">', unsafe_allow_html=True)
-
-# Cargar imagen del organigrama
-imagen_organigrama = Image.open("organigrama.png") # Reemplaza "organigrama.png" con la ruta de tu imagen
-
-# Mostrar imagen 
-st.image(imagen_organigrama, caption='Organigrama del Proyecto', use_column_width=True)
+mostrar_organigrama()
 st.markdown('</div>', unsafe_allow_html=True)
 
 # --- PRESUPUESTO Y COSTOS ---
