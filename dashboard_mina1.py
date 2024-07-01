@@ -3,10 +3,9 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Proyecto Minero", layout="wide")
-
 st.title("Planificación Proyecto Minero")
 
-# Datos del Proyecto (puedes cargar desde un archivo externo si lo prefieres)
+# Datos del Proyecto
 data_gantt = {
     "Tarea": [
         "Construcción de caminos de acceso",
@@ -20,19 +19,23 @@ data_gantt = {
         "Día 1", "Día 4", "Día 8", "Día 15", "Día 46", "Día 52"
     ],
     "Fin": [
-        "Día 3", "Día 7", "Día 45", "Día 84", "Día 51", "Fin del Proyecto"
+        "Día 3", "Día 7", "Día 45", "Día 84", "Día 51", "Día 150" # Ejemplo de fin de proyecto
     ],
     "Duración (días)": [3, 4, 38, 70, 6, "-"],
     "Recursos": [
-        "Maquinaria, Mano de obra", 
-        "Empresa de Obras Menores", 
-        "2 Mineros, 2 Ayudantes", 
-        "2 Mineros, 2 Ayudantes (4 Mineros, 4 Ayudantes a partir del día 46)", 
-        "4 Mineros, 4 Ayudantes", 
+        "Maquinaria, Mano de obra",
+        "Empresa de Obras Menores",
+        "2 Mineros, 2 Ayudantes",
+        "2 Mineros, 2 Ayudantes (4 Mineros, 4 Ayudantes a partir del día 46)",
+        "4 Mineros, 4 Ayudantes",
         "4 Mineros, 4 Ayudantes"
     ]
 }
 df_gantt = pd.DataFrame(data_gantt)
+
+# Convertir las columnas "Inicio" y "Fin" a datetime
+df_gantt["Inicio"] = pd.to_datetime(df_gantt["Inicio"], format="Día %d")
+df_gantt["Fin"] = pd.to_datetime(df_gantt["Fin"], format="Día %d")
 
 # Recursos del Proyecto
 recursos = {
@@ -60,7 +63,7 @@ st.sidebar.markdown("- Empresa proveedora de explosivos")
 st.header("Diagrama de Gantt")
 fig = px.timeline(df_gantt, x_start="Inicio", x_end="Fin", y="Tarea", color="Recursos",
                   title="Cronograma del Proyecto")
-fig.update_yaxes(autorange="reversed") # Muestra las tareas desde arriba hacia abajo
+fig.update_yaxes(autorange="reversed")
 st.plotly_chart(fig, use_container_width=True)
 
 st.header("Recursos del Proyecto")
