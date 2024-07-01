@@ -1,6 +1,7 @@
 plotly.express
 streamlit
 anytree
+graphviz
 pandas
 numpy
 matplotlib
