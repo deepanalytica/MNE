@@ -33,12 +33,13 @@ def cargar_datos_desde_texto(texto):
     data = StringIO(texto)
     df = pd.read_csv(data, sep="\t")
 
-    # Reemplazar "<0.005", "<0.002", "<0.02" con 0 
+    # Reemplazar "<0.005", "<0.002", "<0.02" con 0
     df = df.replace({'<0\.005': 0, '<0\.002': 0, '<0\.02': 0}, regex=True)
 
     # Eliminar posibles comas como separador de miles y convertir a numéricas
     for col in df.columns[2:]:  # Excluir "SAMPLE" y "DESCRIPTION"
-        df[col] = df[col].str.replace(',', '.', regex=True)
+        # Reemplazar comas por puntos ANTES de convertir a numérico
+        df[col] = df[col].str.replace(',', '.', regex=True)  
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     return df
