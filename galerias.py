@@ -3,41 +3,38 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-# --- Cargar datos desde el archivo Excel ---
+# --- Cargar datos desde el texto (copiado y pegado) ---
 @st.cache_data 
-def cargar_datos(archivo_excel):
-    """Carga los datos del archivo Excel y realiza un procesamiento inicial."""
-    df = pd.read_excel(archivo_excel, header=6)  # Saltar las primeras 6 filas del encabezado
+def cargar_datos_desde_texto(texto):
+    """Procesa el texto pegado y lo convierte en un DataFrame."""
+    from io import StringIO
+    data = StringIO(texto)
+    df = pd.read_csv(data, sep="\t")  # Asumiendo que los datos están separados por tabulaciones
 
     # Reemplazar "<0.005" con 0 para evitar errores de tipo
     df = df.replace("<0.005", 0)
     df = df.replace("<0.002", 0)
-    df = df.replace(",,", 0)
+    df = df.replace("<0.02", 0)
 
-    # Convertir las columnas de leyes a numéricas
-    columnas_leyes = [
-        "Au", "Ag", "Al", "As", "Ba", "Be", "Bi", "Ca", "Cd", "Ce",
-        "Co", "Cr", "Cs", "Cu", "Fe", "Ga", "Ge", "Hf", "Hg", "In",
-        "K", "La", "Li", "Mg", "Mn", "Mo", "Na", "Nb", "Ni", "P",
-        "Pb", "Rb", "Re", "S", "Sb", "Sc", "Se", "Sn", "Sr", "Ta",
-        "Te", "Th", "Ti", "Tl", "U", "V", "W", "Y", "Zn", "Zr"
-    ]
-    df[columnas_leyes] = df[columnas_leyes].apply(pd.to_numeric, errors='coerce')
+    # Eliminar posibles comas como separador de miles y convertir a numéricas
+    for col in df.columns[2:]:  # Excluir "SAMPLE" y "DESCRIPTION"
+        df[col] = df[col].str.replace(',', '', regex=True)
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
     return df
 
-# --- Subir archivo Excel ---
-archivo_excel = st.sidebar.file_uploader("Cargar archivo Excel:", type=[".xls", ".xlsx"])
+# --- Interfaz de usuario de Streamlit ---
+st.sidebar.title("Visualización de Muestras 3D")
 
-if archivo_excel is not None:
-    df_muestras = cargar_datos(archivo_excel)
+# --- Pegar datos ---
+texto_datos = st.sidebar.text_area("Pega los datos aquí:", height=200)
 
-    # --- Interfaz de usuario de Streamlit ---
-    st.sidebar.title("Visualización de Muestras 3D")
+if texto_datos:
+    df_muestras = cargar_datos_desde_texto(texto_datos)
 
     # --- Opciones de visualización ---
     st.sidebar.header("Opciones de Visualización")
-    ley_a_visualizar = st.sidebar.selectbox("Seleccionar Ley:", df_muestras.columns[4:])
+    ley_a_visualizar = st.sidebar.selectbox("Seleccionar Ley:", df_muestras.columns[2:])
 
     # --- Visualización 3D ---
     st.title("Visualización 3D de Muestras")
@@ -52,13 +49,13 @@ if archivo_excel is not None:
     for i, row in df_muestras.iterrows():
         fig.add_trace(
             go.Scatter3d(
-                x=[row["Este"], row["Este"] + longitud_sondaje],
-                y=[row["Norte"], row["Norte"]],
-                z=[0, 0],  # Asumiendo que los sondajes están a la misma elevación (puedes ajustar)
+                x=[row["Norte"], row["Norte"] + longitud_sondaje],  # Usando "Norte" como coordenada X
+                y=[row["Norte.1"], row["Norte.1"]],  # Usando "Norte.1" como coordenada Y
+                z=[0, 0],  # Asumiendo que los sondajes están a la misma elevación
                 mode="lines+markers",
                 line=dict(width=5, color=row[ley_a_visualizar], colorscale="Viridis"),
                 marker=dict(size=8, color=row[ley_a_visualizar], colorscale="Viridis"),
-                hovertext=f"Muestra: {row['DESCRIPTION']}<br>{ley_a_visualizar}: {row[ley_a_visualizar]}",
+                hovertext=f"Muestra: {row['SAMPLE']}<br>{ley_a_visualizar}: {row[ley_a_visualizar]}",
                 showlegend=False,
             )
         )
@@ -66,8 +63,8 @@ if archivo_excel is not None:
     # Configuración del gráfico
     fig.update_layout(
         scene=dict(
-            xaxis_title="Este",
-            yaxis_title="Norte",
+            xaxis_title="Norte",  # Ajustar el título del eje X
+            yaxis_title="Norte.1",  # Ajustar el título del eje Y
             zaxis_title="Elevación",
             aspectmode='data'  # Ajusta la relación de aspecto
         ),
@@ -76,4 +73,4 @@ if archivo_excel is not None:
 
     st.plotly_chart(fig)
 else:
-    st.warning("Por favor, carga un archivo Excel con las muestras y sus coordenadas.")
+    st.warning("Por favor, pega los datos en el área de texto.")
