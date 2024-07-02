@@ -16,9 +16,8 @@ def cargar_datos_desde_texto(texto):
     df = df.replace("<0.002", 0)
     df = df.replace("<0.02", 0)
 
-    # Eliminar posibles comas como separador de miles y convertir a numéricas
+    # Convertir las columnas de leyes a numéricas
     for col in df.columns[2:]:  # Excluir "SAMPLE" y "DESCRIPTION"
-        df[col] = df[col].str.replace(',', '', regex=True)
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     return df
