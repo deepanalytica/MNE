@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from scipy.interpolate import griddata
 from io import StringIO
 
 # --- Datos proporcionados ---
@@ -32,14 +33,12 @@ def cargar_datos_desde_texto(texto):
     data = StringIO(texto)
     df = pd.read_csv(data, sep="\t")
 
-    # Reemplazar "<0.005" con 0 para evitar errores de tipo
-    df = df.replace("<0.005", 0)
-    df = df.replace("<0.002", 0)
-    df = df.replace("<0.02", 0)
+    # Reemplazar "<0.005", "<0.002", "<0.02" con 0 
+    df = df.replace({'<0\.005': 0, '<0\.002': 0, '<0\.02': 0}, regex=True)
 
     # Eliminar posibles comas como separador de miles y convertir a numéricas
     for col in df.columns[2:]:  # Excluir "SAMPLE" y "DESCRIPTION"
-        df[col] = df[col].str.replace(',', '', regex=True)
+        df[col] = df[col].str.replace(',', '.', regex=True)
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     return df
@@ -54,6 +53,7 @@ st.sidebar.title("Visualización de Muestras 3D")
 st.sidebar.header("Opciones de Visualización")
 ley_a_visualizar = st.sidebar.selectbox("Seleccionar Ley:", df_muestras.columns[2:])
 inclinacion = st.sidebar.slider("Ángulo de Inclinación (grados):", 0, 90, 45)
+mostrar_interpolacion = st.sidebar.checkbox("Mostrar Interpolación", value=True)
 
 # --- Visualización 3D ---
 st.title("Visualización 3D de Muestras")
@@ -61,7 +61,7 @@ st.title("Visualización 3D de Muestras")
 # Crear la figura 3D
 fig = go.Figure()
 
-# Añadir cada muestra como un trazo con color según la ley
+# Añadir cada muestra como un trazo con mapa de calor
 for i in range(len(df_muestras) - 1):
     row1 = df_muestras.iloc[i]
     row2 = df_muestras.iloc[i + 1]
@@ -82,10 +82,34 @@ for i in range(len(df_muestras) - 1):
             y=[row1["Norte.1"], row2["Norte.1"]],
             z=[0, diferencia_z],
             mode="lines+markers",
-            line=dict(width=5, color=row1[ley_a_visualizar], colorscale="Viridis"),
+            line=dict(width=5, color=row1[ley_a_visualizar], colorscale="Viridis", showscale=True),  # Mapa de calor en la línea
             marker=dict(size=8, color=row1[ley_a_visualizar], colorscale="Viridis"),
             hovertext=f"Muestra: {row1['SAMPLE']}<br>{ley_a_visualizar}: {row1[ley_a_visualizar]}<br>Distancia 3D: {distancia_3d:.2f} m",
             showlegend=False,
+        )
+    )
+
+# Interpolación para el contorno del cuerpo mineralizado
+if mostrar_interpolacion:
+    # Crear una grilla para la interpolación
+    num_puntos = 50
+    xi = np.linspace(df_muestras["Norte"].min(), df_muestras["Norte"].max(), num_puntos)
+    yi = np.linspace(df_muestras["Norte.1"].min(), df_muestras["Norte.1"].max(), num_puntos)
+    grid_x, grid_y = np.meshgrid(xi, yi)
+
+    # Interpolar los valores de la ley en la grilla
+    zi = griddata((df_muestras["Norte"], df_muestras["Norte.1"]), df_muestras[ley_a_visualizar], (grid_x, grid_y), method='cubic')
+
+    # Añadir la superficie interpolada al gráfico
+    fig.add_trace(
+        go.Surface(
+            x=grid_x,
+            y=grid_y,
+            z=np.zeros_like(zi),  # Mantener la superficie en Z=0
+            surfacecolor=zi,
+            colorscale="Viridis",
+            opacity=0.7,
+            showscale=False,
         )
     )
 
@@ -97,7 +121,8 @@ fig.update_layout(
         zaxis_title="Elevación",
         aspectmode='data'
     ),
-    margin=dict(l=0, r=0, b=0, t=0)
+    margin=dict(l=0, r=0, b=0, t=0),
+    showlegend=False
 )
 
 st.plotly_chart(fig)
