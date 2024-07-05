@@ -2,7 +2,10 @@ import streamlit as st
 import graphviz as gv
 
 # Crear el grafo del organigrama
-dot = gv.Digraph()
+dot = gv.Digraph(format='png')
+
+# Configuración global de nodos
+dot.attr('node', shape='box', style='rounded, filled', color='lightblue', fontname='Helvetica', fontsize='10')
 
 # Añadir nodos
 dot.node('Directorio', 'Directorio')
