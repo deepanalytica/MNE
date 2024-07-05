@@ -3,6 +3,7 @@ graphviz
 streamlit
 anytree
 networkx
+jinja2
 pyvis
 graphviz
 pandas
