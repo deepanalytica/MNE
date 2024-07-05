@@ -2,6 +2,8 @@ plotly.express
 graphviz
 streamlit
 anytree
+networkx
+pyvis
 graphviz
 pandas
 numpy
