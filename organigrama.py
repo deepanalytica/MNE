@@ -31,17 +31,50 @@ colaboradores = [
 
 # Añadir nodos y edges al grafo
 for col in colaboradores:
-    G.add_node(col["Nombre"], title=f"Funciones: {col['Funciones']}<br>Reporta a: {col['ReportaA']}")
+    G.add_node(col["Nombre"], title=f"Funciones: {col['Funciones']}<br>Reporta a: {col['ReportaA']}", shape="box", borderWidth=1, borderWidthSelected=2, color="lightblue")
 
 for col in colaboradores:
     if col["ReportaA"] != "N/A":
         G.add_edge(col["ReportaA"], col["Nombre"])
 
-# Crear una red interactiva
-net = Network(height='700px', width='100%', directed=True)
+# Crear una red interactiva con layout jerárquico vertical
+net = Network(height='800px', width='100%', directed=True)
 net.from_nx(G)
+
+# Configurar el layout jerárquico
+net.hrepulsion(node_distance=200)
+net.set_options("""
+var options = {
+  "layout": {
+    "hierarchical": {
+      "enabled": true,
+      "direction": "UD",
+      "sortMethod": "directed"
+    }
+  },
+  "nodes": {
+    "borderWidth": 1,
+    "shape": "box",
+    "shapeProperties": {
+      "borderRadius": 6
+    },
+    "color": {
+      "background": "lightblue"
+    }
+  },
+  "interaction": {
+    "hover": true
+  },
+  "physics": {
+    "hierarchicalRepulsion": {
+      "nodeDistance": 150
+    }
+  }
+}
+""")
 
 # Guardar y mostrar la red en Streamlit
 net.save_graph('network.html')
 st.title("Organigrama de la Empresa Minera")
-st.components.v1.html(open('network.html', 'r').read(), height=700, scrolling=True)
+st.components.v1.html(open('network.html', 'r').read(), height=800, scrolling=True)
+
