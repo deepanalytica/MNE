@@ -5,7 +5,7 @@ import networkx as nx
 # Crear el grafo
 G = nx.DiGraph()
 
-# Añadir nodos y bordes con información adicional
+# Información de colaboradores
 colaboradores = [
     {"Nombre": "Directorio", "Funciones": "Supervisa la gestión de la empresa.", "ReportaA": "N/A"},
     {"Nombre": "Gerencia General", "Funciones": "Supervisa la operación total de la empresa y toma decisiones estratégicas.", "ReportaA": "Directorio"},
@@ -31,14 +31,14 @@ colaboradores = [
 
 # Añadir nodos y edges al grafo
 for col in colaboradores:
-    G.add_node(col["Nombre"], title=f"Funciones: {col['Funciones']}<br>Reporta a: {col['ReportaA']}", shape="box", borderWidth=1, borderWidthSelected=2, color="lightblue")
+    G.add_node(col["Nombre"], title=f"<b>{col['Nombre']}</b><br>Funciones: {col['Funciones']}<br>Reporta a: {col['ReportaA']}", shape="box", borderWidth=1, borderWidthSelected=2, color="lightblue")
 
 for col in colaboradores:
     if col["ReportaA"] != "N/A":
         G.add_edge(col["ReportaA"], col["Nombre"])
 
 # Crear una red interactiva con layout jerárquico vertical
-net = Network(height='800px', width='100%', directed=True)
+net = Network(height='800px', width='100%', directed=True, bgcolor='#222222', font_color='white')
 net.from_nx(G)
 
 # Configurar el layout jerárquico
@@ -59,11 +59,24 @@ var options = {
       "borderRadius": 6
     },
     "color": {
-      "background": "lightblue"
+      "background": "lightblue",
+      "border": "#222222",
+      "highlight": {
+        "background": "#97C2FC",
+        "border": "#2B7CE9"
+      }
+    },
+    "font": {
+      "color": "white",
+      "size": 16,
+      "face": "arial",
+      "align": "center"
     }
   },
   "interaction": {
-    "hover": true
+    "hover": true,
+    "tooltipDelay": 200,
+    "hideEdgesOnDrag": true
   },
   "physics": {
     "hierarchicalRepulsion": {
