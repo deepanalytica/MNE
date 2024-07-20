@@ -43,54 +43,67 @@ if collar_file and survey_file and assay_file and litho_file:
 
     # Reemplazar '<0.005' por 0.0025 y convertir a numérico
     gdf['Au'] = gdf['Au'].replace('<0.005', 0.0025)
-    gdf['Au'] = pd.to_numeric(gdf['Au'])
+    gdf['Au'] = pd.to_numeric(gdf['Au'], errors='coerce')
 
-    # Visualización de datos
-    st.header("Visualización de Datos")
+    # Convertir tipos de datos
+    gdf['lat'] = pd.to_numeric(gdf['lat'], errors='coerce')
+    gdf['lon'] = pd.to_numeric(gdf['lon'], errors='coerce')
+    gdf['maxdepth'] = pd.to_numeric(gdf['maxdepth'], errors='coerce')
 
-    # Mapa de sondajes
-    st.subheader("Mapa de Sondajes")
-    fig = px.scatter_mapbox(gdf, 
-                        lat="lat", 
-                        lon="lon",
-                        color="Au", 
-                        size="maxdepth",
-                        hover_name="BHID", 
-                        hover_data=["FROM", "TO", "LITHO"],
-                        color_continuous_scale="Viridis", 
-                        zoom=12, 
-                        height=600)
-    fig.update_layout(mapbox_style="open-street-map")
-    st.plotly_chart(fig)
+    # Verificar si hay valores nulos en las columnas necesarias
+    if gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().any().any():
+        st.warning("Algunas columnas contienen valores nulos. Por favor, revise los datos cargados.")
+        st.write(gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().sum())
+    else:
+        # Visualización de datos
+        st.header("Visualización de Datos")
 
-    # Gráficos de secciones transversales
-    st.subheader("Secciones Transversales")
-    selected_bhid = st.selectbox("Seleccionar Sondaje", gdf['BHID'].unique())
-    section_data = gdf[gdf['BHID'] == selected_bhid]
-    fig = px.scatter(section_data, x="AT", y="Au", color="LITHO", title=f"Sección Transversal {selected_bhid}")
-    st.plotly_chart(fig)
+        # Mapa de sondajes
+        st.subheader("Mapa de Sondajes")
+        try:
+            fig = px.scatter_mapbox(gdf, 
+                                    lat="lat", 
+                                    lon="lon",
+                                    color="Au", 
+                                    size="maxdepth",
+                                    hover_name="BHID", 
+                                    hover_data=["FROM", "TO", "LITHO"],
+                                    color_continuous_scale="Viridis", 
+                                    zoom=12, 
+                                    height=600)
+            fig.update_layout(mapbox_style="open-street-map")
+            st.plotly_chart(fig)
+        except Exception as e:
+            st.error(f"Se ha producido un error al crear el mapa: {e}")
 
-    # Análisis estadístico
-    st.header("Análisis Estadístico")
-    st.write(gdf.describe())
-
-    # Correlaciones multi-elemento
-    st.subheader("Correlaciones Multi-elemento")
-    selected_elements = st.multiselect("Seleccionar Elementos", gdf.columns)
-    if len(selected_elements) > 1:
-        fig = px.scatter_matrix(gdf, dimensions=selected_elements, color="LITHO", title="Matriz de Correlación")
+        # Gráficos de secciones transversales
+        st.subheader("Secciones Transversales")
+        selected_bhid = st.selectbox("Seleccionar Sondaje", gdf['BHID'].unique())
+        section_data = gdf[gdf['BHID'] == selected_bhid]
+        fig = px.scatter(section_data, x="AT", y="Au", color="LITHO", title=f"Sección Transversal {selected_bhid}")
         st.plotly_chart(fig)
 
-    # Próximos pasos
-    st.header("Próximos Pasos")
-    st.write(
-        """
-        * **Mapeo geológico detallado:** Complementar el mapeo existente.
-        * **Muestreo geoquímico sistemático:** Ampliar el muestreo.
-        * **Sondajes adicionales:** Planificar y ejecutar sondajes.
-        * **Estudios geofísicos:** Considerar magnetometría, IP, etc.
-        """
-    )
+        # Análisis estadístico
+        st.header("Análisis Estadístico")
+        st.write(gdf.describe())
+
+        # Correlaciones multi-elemento
+        st.subheader("Correlaciones Multi-elemento")
+        selected_elements = st.multiselect("Seleccionar Elementos", gdf.columns)
+        if len(selected_elements) > 1:
+            fig = px.scatter_matrix(gdf, dimensions=selected_elements, color="LITHO", title="Matriz de Correlación")
+            st.plotly_chart(fig)
+
+        # Próximos pasos
+        st.header("Próximos Pasos")
+        st.write(
+            """
+            * **Mapeo geológico detallado:** Complementar el mapeo existente.
+            * **Muestreo geoquímico sistemático:** Ampliar el muestreo.
+            * **Sondajes adicionales:** Planificar y ejecutar sondajes.
+            * **Estudios geofísicos:** Considerar magnetometría, IP, etc.
+            """
+        )
 
 else:
     st.warning("Por favor, cargue todos los archivos CSV para comenzar el análisis.")
