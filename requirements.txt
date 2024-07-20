@@ -4,6 +4,11 @@ streamlit
 anytree
 networkx
 jinja2
+pandas
+numpy
+plotly
+geopandas
+shapely
 pyvis
 graphviz
 pandas
