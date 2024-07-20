@@ -41,6 +41,10 @@ if collar_file and survey_file and assay_file and litho_file:
     gdf['lat'] = gdf.geometry.y
     gdf['lon'] = gdf.geometry.x
 
+    # Reemplazar '<0.005' por 0.0025 y convertir a numérico
+    gdf['Au'] = gdf['Au'].replace('<0.005', 0.0025)
+    gdf['Au'] = pd.to_numeric(gdf['Au'])
+
     # Visualización de datos
     st.header("Visualización de Datos")
 
