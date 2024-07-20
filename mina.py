@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 from io import StringIO
 import geopandas as gpd
@@ -26,84 +25,98 @@ if collar_file and survey_file and assay_file and litho_file:
     assay = pd.read_csv(StringIO(assay_file.getvalue().decode("utf-8")))
     litho = pd.read_csv(StringIO(litho_file.getvalue().decode("utf-8")))
 
-    # Combinar datos de collar y survey
-    data = pd.merge(collar, survey, on='BHID')
+    # Verificar la existencia de columnas necesarias
+    required_collar_columns = {'BHID', 'XCOLLARWGS84', 'YCOLLARWGS84'}
+    required_survey_columns = {'BHID', 'DEPTH', 'DIP', 'AZIMUTH'}
+    required_assay_columns = {'BHID', 'FROM', 'TO', 'Au'}
+    required_litho_columns = {'BHID', 'FROM', 'TO', 'LITHO'}
 
-    # Convertir coordenadas a GeoDataFrame (para otros usos)
-    geometry = [Point(xy) for xy in zip(data['XCOLLARWGS84'], data['YCOLLARWGS84'])]
-    gdf = gpd.GeoDataFrame(data, geometry=geometry)
-
-    # Unir datos de ensayos y litología, reiniciando el índice
-    gdf = gdf.merge(assay, on='BHID').reset_index(drop=True)
-    gdf = gdf.merge(litho, on='BHID').reset_index(drop=True)
-
-    # Extraer coordenadas como columnas separadas
-    gdf['lat'] = gdf.geometry.y
-    gdf['lon'] = gdf.geometry.x
-
-    # Reemplazar '<0.005' por 0.0025 y convertir a numérico
-    gdf['Au'] = gdf['Au'].replace('<0.005', 0.0025)
-    gdf['Au'] = pd.to_numeric(gdf['Au'], errors='coerce')
-
-    # Convertir tipos de datos
-    gdf['lat'] = pd.to_numeric(gdf['lat'], errors='coerce')
-    gdf['lon'] = pd.to_numeric(gdf['lon'], errors='coerce')
-    gdf['maxdepth'] = pd.to_numeric(gdf['maxdepth'], errors='coerce')
-
-    # Verificar si hay valores nulos en las columnas necesarias
-    if gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().any().any():
-        st.warning("Algunas columnas contienen valores nulos. Por favor, revise los datos cargados.")
-        st.write(gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().sum())
+    if not required_collar_columns.issubset(collar.columns):
+        st.error("El archivo Collar no contiene las columnas necesarias.")
+    elif not required_survey_columns.issubset(survey.columns):
+        st.error("El archivo Survey no contiene las columnas necesarias.")
+    elif not required_assay_columns.issubset(assay.columns):
+        st.error("El archivo Ensayos no contiene las columnas necesarias.")
+    elif not required_litho_columns.issubset(litho.columns):
+        st.error("El archivo Litología no contiene las columnas necesarias.")
     else:
-        # Visualización de datos
-        st.header("Visualización de Datos")
+        # Combinar datos de collar y survey
+        data = pd.merge(collar, survey, on='BHID')
 
-        # Mapa de sondajes
-        st.subheader("Mapa de Sondajes")
-        try:
-            fig = px.scatter_mapbox(gdf, 
-                                    lat="lat", 
-                                    lon="lon",
-                                    color="Au", 
-                                    size="maxdepth",
-                                    hover_name="BHID", 
-                                    hover_data=["FROM", "TO", "LITHO"],
-                                    color_continuous_scale="Viridis", 
-                                    zoom=12, 
-                                    height=600)
-            fig.update_layout(mapbox_style="open-street-map")
+        # Convertir coordenadas a GeoDataFrame (para otros usos)
+        geometry = [Point(xy) for xy in zip(data['XCOLLARWGS84'], data['YCOLLARWGS84'])]
+        gdf = gpd.GeoDataFrame(data, geometry=geometry)
+
+        # Unir datos de ensayos y litología, reiniciando el índice
+        gdf = gdf.merge(assay, on='BHID').reset_index(drop=True)
+        gdf = gdf.merge(litho, on='BHID').reset_index(drop=True)
+
+        # Extraer coordenadas como columnas separadas
+        gdf['lat'] = gdf.geometry.y
+        gdf['lon'] = gdf.geometry.x
+
+        # Reemplazar '<0.005' por 0.0025 y convertir a numérico
+        gdf['Au'] = gdf['Au'].replace('<0.005', 0.0025)
+        gdf['Au'] = pd.to_numeric(gdf['Au'], errors='coerce')
+
+        # Convertir tipos de datos
+        gdf['lat'] = pd.to_numeric(gdf['lat'], errors='coerce')
+        gdf['lon'] = pd.to_numeric(gdf['lon'], errors='coerce')
+        gdf['maxdepth'] = pd.to_numeric(gdf['DEPTH'], errors='coerce')
+
+        # Verificar si hay valores nulos en las columnas necesarias
+        if gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().any().any():
+            st.warning("Algunas columnas contienen valores nulos. Por favor, revise los datos cargados.")
+            st.write(gdf[['lat', 'lon', 'Au', 'maxdepth']].isnull().sum())
+        else:
+            # Visualización de datos
+            st.header("Visualización de Datos")
+
+            # Mapa de sondajes
+            st.subheader("Mapa de Sondajes")
+            try:
+                fig = px.scatter_mapbox(gdf, 
+                                        lat="lat", 
+                                        lon="lon",
+                                        color="Au", 
+                                        size="maxdepth",
+                                        hover_name="BHID", 
+                                        hover_data=["FROM", "TO", "LITHO"],
+                                        color_continuous_scale="Viridis", 
+                                        zoom=12, 
+                                        height=600)
+                fig.update_layout(mapbox_style="open-street-map")
+                st.plotly_chart(fig)
+            except Exception as e:
+                st.error(f"Se ha producido un error al crear el mapa: {e}")
+
+            # Gráficos de secciones transversales
+            st.subheader("Secciones Transversales")
+            selected_bhid = st.selectbox("Seleccionar Sondaje", gdf['BHID'].unique())
+            section_data = gdf[gdf['BHID'] == selected_bhid]
+            fig = px.scatter(section_data, x="FROM", y="Au", color="LITHO", title=f"Sección Transversal {selected_bhid}")
             st.plotly_chart(fig)
-        except Exception as e:
-            st.error(f"Se ha producido un error al crear el mapa: {e}")
 
-        # Gráficos de secciones transversales
-        st.subheader("Secciones Transversales")
-        selected_bhid = st.selectbox("Seleccionar Sondaje", gdf['BHID'].unique())
-        section_data = gdf[gdf['BHID'] == selected_bhid]
-        fig = px.scatter(section_data, x="AT", y="Au", color="LITHO", title=f"Sección Transversal {selected_bhid}")
-        st.plotly_chart(fig)
+            # Análisis estadístico
+            st.header("Análisis Estadístico")
+            st.write(gdf.describe())
 
-        # Análisis estadístico
-        st.header("Análisis Estadístico")
-        st.write(gdf.describe())
+            # Correlaciones multi-elemento
+            st.subheader("Correlaciones Multi-elemento")
+            selected_elements = st.multiselect("Seleccionar Elementos", gdf.columns)
+            if len(selected_elements) > 1:
+                fig = px.scatter_matrix(gdf, dimensions=selected_elements, color="LITHO", title="Matriz de Correlación")
+                st.plotly_chart(fig)
 
-        # Correlaciones multi-elemento
-        st.subheader("Correlaciones Multi-elemento")
-        selected_elements = st.multiselect("Seleccionar Elementos", gdf.columns)
-        if len(selected_elements) > 1:
-            fig = px.scatter_matrix(gdf, dimensions=selected_elements, color="LITHO", title="Matriz de Correlación")
-            st.plotly_chart(fig)
-
-        # Próximos pasos
-        st.header("Próximos Pasos")
-        st.write(
-            """
-            * **Mapeo geológico detallado:** Complementar el mapeo existente.
-            * **Muestreo geoquímico sistemático:** Ampliar el muestreo.
-            * **Sondajes adicionales:** Planificar y ejecutar sondajes.
-            * **Estudios geofísicos:** Considerar magnetometría, IP, etc.
-            """
-        )
-
+            # Próximos pasos
+            st.header("Próximos Pasos")
+            st.write(
+                """
+                * **Mapeo geológico detallado:** Complementar el mapeo existente.
+                * **Muestreo geoquímico sistemático:** Ampliar el muestreo.
+                * **Sondajes adicionales:** Planificar y ejecutar sondajes.
+                * **Estudios geofísicos:** Considerar magnetometría, IP, etc.
+                """
+            )
 else:
     st.warning("Por favor, cargue todos los archivos CSV para comenzar el análisis.")
