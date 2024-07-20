@@ -33,10 +33,11 @@ if collar_file and survey_file and assay_file and litho_file:
     geometry = [Point(xy) for xy in zip(data['XCOLLARWGS84'], data['YCOLLARWGS84'])]
     gdf = gpd.GeoDataFrame(data, geometry=geometry)
 
-    # Unir datos de ensayos y litología
-    gdf = gdf.merge(assay, on='BHID').merge(litho, on='BHID')
+    # Unir datos de ensayos y litología, reiniciando el índice
+    gdf = gdf.merge(assay, on='BHID').reset_index(drop=True)
+    gdf = gdf.merge(litho, on='BHID').reset_index(drop=True)
 
-    # ----> CORRECCIÓN: Extraer coordenadas como columnas separadas
+    # Extraer coordenadas como columnas separadas
     gdf['lat'] = gdf.geometry.y
     gdf['lon'] = gdf.geometry.x
 
@@ -46,7 +47,7 @@ if collar_file and survey_file and assay_file and litho_file:
     # Mapa de sondajes
     st.subheader("Mapa de Sondajes")
     fig = px.scatter_mapbox(gdf, 
-                        lat="lat",  # Usar las columnas 'lat' y 'lon'
+                        lat="lat", 
                         lon="lon",
                         color="Au", 
                         size="maxdepth",
@@ -58,7 +59,34 @@ if collar_file and survey_file and assay_file and litho_file:
     fig.update_layout(mapbox_style="open-street-map")
     st.plotly_chart(fig)
 
-    # Resto del código (sin cambios)
-    # ... 
+    # Gráficos de secciones transversales
+    st.subheader("Secciones Transversales")
+    selected_bhid = st.selectbox("Seleccionar Sondaje", gdf['BHID'].unique())
+    section_data = gdf[gdf['BHID'] == selected_bhid]
+    fig = px.scatter(section_data, x="AT", y="Au", color="LITHO", title=f"Sección Transversal {selected_bhid}")
+    st.plotly_chart(fig)
+
+    # Análisis estadístico
+    st.header("Análisis Estadístico")
+    st.write(gdf.describe())
+
+    # Correlaciones multi-elemento
+    st.subheader("Correlaciones Multi-elemento")
+    selected_elements = st.multiselect("Seleccionar Elementos", gdf.columns)
+    if len(selected_elements) > 1:
+        fig = px.scatter_matrix(gdf, dimensions=selected_elements, color="LITHO", title="Matriz de Correlación")
+        st.plotly_chart(fig)
+
+    # Próximos pasos
+    st.header("Próximos Pasos")
+    st.write(
+        """
+        * **Mapeo geológico detallado:** Complementar el mapeo existente.
+        * **Muestreo geoquímico sistemático:** Ampliar el muestreo.
+        * **Sondajes adicionales:** Planificar y ejecutar sondajes.
+        * **Estudios geofísicos:** Considerar magnetometría, IP, etc.
+        """
+    )
+
 else:
     st.warning("Por favor, cargue todos los archivos CSV para comenzar el análisis.")
